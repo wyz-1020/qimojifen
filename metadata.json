@@ -1,0 +1,6 @@
+{
+  "name": "小蜜蜂“期末作战之狼人杀”",
+  "description": "实时记录小组和成员贡献，支持个人与小组批量加减分的期末大作战排行榜积分工具。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
