@@ -45,9 +45,54 @@ export default function App() {
 
     if (cachedStudents && cachedGroups) {
       try {
-        setStudents(JSON.parse(cachedStudents));
-        setGroups(JSON.parse(cachedGroups));
-        setLogs(cachedLogs ? JSON.parse(cachedLogs) : []);
+        const parsedStudents: Student[] = JSON.parse(cachedStudents);
+        const parsedGroups: Group[] = JSON.parse(cachedGroups);
+        const parsedLogs = cachedLogs ? JSON.parse(cachedLogs) : [];
+
+        // Synchronize roster from getInitialData() to preserve scores for existing students
+        const { students: freshStudents, groups: freshGroups } = getInitialData();
+        
+        const synchronizedStudents = freshStudents.map((freshStudent) => {
+          const existing = parsedStudents.find(
+            (ps) => ps.name.trim() === freshStudent.name.trim() && ps.groupId === freshStudent.groupId
+          );
+          
+          let score = freshStudent.score;
+          let starRating = freshStudent.starRating;
+          
+          if (existing) {
+            score = existing.score;
+            starRating = existing.starRating;
+          } else if (freshStudent.name === '沈路菲') {
+            // Map previous "沈璐菲" under group 4 to "沈路菲" to retain score
+            const oldLufei = parsedStudents.find(
+              (ps) => (ps.name.trim() === '沈璐菲' || ps.name.trim() === '沈路菲') && ps.groupId === 'g4'
+            );
+            if (oldLufei) {
+              score = oldLufei.score;
+              starRating = oldLufei.starRating;
+            }
+          }
+          
+          return {
+            ...freshStudent,
+            score,
+            starRating
+          };
+        });
+
+        const synchronizedGroups = freshGroups.map((freshGroup) => {
+          const existingGroup = parsedGroups.find((g) => g.id === freshGroup.id);
+          return {
+            ...freshGroup,
+            score: existingGroup ? existingGroup.score : freshGroup.score
+          };
+        });
+
+        setStudents(synchronizedStudents);
+        setGroups(synchronizedGroups);
+        setLogs(parsedLogs);
+        saveToStorage(synchronizedStudents, synchronizedGroups, parsedLogs);
       } catch (e) {
         console.error('Error parsing cached data, restoring default...', e);
         bootstrapDefault();
