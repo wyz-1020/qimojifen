@@ -9,12 +9,6 @@ interface MemberSectionProps {
   onUpdateStarRating?: (studentId: string, stars: number) => void;
 }
 
-interface PendingAction {
-  studentId: string;
-  type: 'add' | 'sub';
-  value: string;
-}
-
 const GROUP_STYLES: Record<string, string> = {
   g1: 'border-amber-550/35 bg-amber-500/5 text-amber-400',
   g2: 'border-indigo-550/35 bg-indigo-500/5 text-indigo-400',
@@ -26,9 +20,6 @@ export default function MemberSection({ students, onAdjustMemberScore }: MemberS
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('all');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc' | 'alphabetical'>('desc');
-  
-  // Directly manage active inline interactive prompt per student card
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   // Filter and sort students
   const filteredStudents = students
@@ -48,24 +39,6 @@ export default function MemberSection({ students, onAdjustMemberScore }: MemberS
   const getGlobalRank = (studentId: string) => {
     const idx = globalSorted.findIndex((s) => s.id === studentId);
     return idx >= 0 ? idx + 1 : 99;
-  };
-
-  // Score action submit processor
-  const handleScoreSubmit = (studentId: string) => {
-    if (!pendingAction) return;
-    const pts = parseInt(pendingAction.value, 10);
-    if (isNaN(pts) || pts <= 0) {
-      alert('请输入有效的加减分数（正整数）！');
-      return;
-    }
-
-    const finalPoints = pendingAction.type === 'add' ? pts : -pts;
-    const reasonText = pendingAction.type === 'add' 
-      ? `🔮 个人战绩追加 +${pts} 分` 
-      : `🐺 个人战绩扣减分 -${pts} 分`;
-
-    onAdjustMemberScore(studentId, finalPoints, reasonText);
-    setPendingAction(null);
   };
 
   return (
@@ -131,17 +104,12 @@ export default function MemberSection({ students, onAdjustMemberScore }: MemberS
           {filteredStudents.map((student) => {
             const globalRank = getGlobalRank(student.id);
             const style = GROUP_STYLES[student.groupId] || GROUP_STYLES.g1;
-            const isPendingThisStudent = pendingAction?.studentId === student.id;
 
             return (
               <motion.div
                 key={student.id}
                 layoutId={`student-card-${student.id}`}
-                className={`relative rounded-xl border p-2.5 flex flex-col justify-between transition-all duration-150 shadow-sm min-h-[105px] ${
-                  isPendingThisStudent 
-                    ? 'bg-indigo-900 border-amber-400 ring-1 ring-amber-400/40' 
-                    : 'bg-indigo-950/45 border-indigo-850 hover:bg-indigo-950/85 hover:border-indigo-750'
-                }`}
+                className="relative rounded-xl border p-2.5 flex flex-col justify-between transition-all duration-150 shadow-sm min-h-[105px] bg-indigo-950/45 border-indigo-850 hover:bg-indigo-950/85 hover:border-indigo-750"
               >
                 {/* Visual indicator corner flare */}
                 <div className="absolute top-1 right-1 w-1 h-1 rounded-full bg-amber-400 opacity-20 animate-pulse" />
@@ -170,66 +138,27 @@ export default function MemberSection({ students, onAdjustMemberScore }: MemberS
                   </div>
                 </div>
 
-                {/* Score Controls (+ and - symbols inline popup) */}
+                {/* Score Controls (+ and - tap directly) */}
                 <div className="mt-2 text-center shrink-0">
-                  {!isPendingThisStudent ? (
-                    <div className="flex items-center gap-1.5">
-                      {/* Minus button trigger */}
-                      <button
-                        title="点击进行输入扣减"
-                        onClick={() => setPendingAction({ studentId: student.id, type: 'sub', value: '' })}
-                        className="flex-1 h-6 flex items-center justify-center font-extrabold text-xs rounded-md bg-rose-950/80 border border-rose-900 text-rose-350 hover:bg-rose-900 transition-colors cursor-pointer"
-                      >
-                        -
-                      </button>
-                      
-                      {/* Plus button trigger */}
-                      <button
-                        title="点击进行输入奖励"
-                        onClick={() => setPendingAction({ studentId: student.id, type: 'add', value: '' })}
-                        className="flex-1 h-6 flex items-center justify-center font-extrabold text-xs rounded-md bg-emerald-950/80 border border-emerald-900 text-emerald-355 text-emerald-300 hover:bg-emerald-900 transition-all cursor-pointer"
-                      >
-                        +
-                      </button>
-                    </div>
-                  ) : (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleScoreSubmit(student.id);
-                      }}
-                      className="flex items-center gap-1 leading-none h-6 shrink-0"
+                  <div className="flex items-center gap-1.5">
+                    {/* Minus button trigger */}
+                    <button
+                      title="扣分 -1"
+                      onClick={() => onAdjustMemberScore(student.id, -1, `🐺 个人扣减 1 分`)}
+                      className="flex-1 h-6 flex items-center justify-center font-extrabold text-sm rounded-md bg-rose-950/80 border border-rose-900/50 text-rose-300 hover:bg-rose-900 transition-colors active:scale-95 cursor-pointer"
                     >
-                      <input
-                        type="number"
-                        placeholder={pendingAction.type === 'add' ? '+几' : '-几'}
-                        value={pendingAction.value}
-                        onChange={(e) => setPendingAction({ ...pendingAction, value: e.target.value })}
-                        className="w-12 h-6 text-center text-xs font-black border border-amber-400 rounded bg-indigo-950 text-amber-300 placeholder:text-indigo-500 focus:outline-none focus:ring-1 focus:ring-amber-400/40 font-mono"
-                        autoFocus
-                        min="1"
-                        max="100"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Escape') setPendingAction(null);
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        className="h-6 w-5 rounded bg-emerald-500 hover:bg-emerald-400 text-indigo-950 text-[10px] font-black flex items-center justify-center cursor-pointer"
-                        title="确定修改"
-                      >
-                        ✔
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPendingAction(null)}
-                        className="h-6 w-5 rounded bg-indigo-800 hover:bg-indigo-750 text-indigo-300 text-[10px] font-black flex items-center justify-center cursor-pointer"
-                        title="放弃修改"
-                      >
-                        ✘
-                      </button>
-                    </form>
-                  )}
+                      -
+                    </button>
+                    
+                    {/* Plus button trigger */}
+                    <button
+                      title="加分 +1"
+                      onClick={() => onAdjustMemberScore(student.id, 1, `🔮 个人加分 1 分`)}
+                      className="flex-1 h-6 flex items-center justify-center font-extrabold text-sm rounded-md bg-emerald-950/85 border border-emerald-900/50 text-emerald-300 hover:bg-emerald-900 transition-all active:scale-95 cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
 
               </motion.div>
