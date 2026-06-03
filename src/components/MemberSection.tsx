@@ -19,7 +19,7 @@ const GROUP_STYLES: Record<string, string> = {
 export default function MemberSection({ students, onAdjustMemberScore }: MemberSectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('all');
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc' | 'alphabetical'>('desc');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc' | 'alphabetical'>('alphabetical');
 
   // Filter and sort students
   const filteredStudents = students
@@ -91,9 +91,9 @@ export default function MemberSection({ students, onAdjustMemberScore }: MemberS
             onChange={(e) => setSortOrder(e.target.value as any)}
             className="w-full text-xs py-1.5 px-2 border border-indigo-800 rounded-xl bg-indigo-900/40 text-indigo-100 focus:outline-none focus:border-amber-400 font-sans"
           >
+            <option value="alphabetical" className="bg-indigo-950 text-indigo-100">🔤 按首字母排序</option>
             <option value="desc" className="bg-indigo-950 text-indigo-100">🔥 积分从高到低</option>
             <option value="asc" className="bg-indigo-950 text-indigo-100">📉 积分从低到高</option>
-            <option value="alphabetical" className="bg-indigo-950 text-indigo-100">🔤 按首字母排序</option>
           </select>
         </div>
       </div>
